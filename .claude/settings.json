@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\database\\\\migrations\" | Sort-Object Name | ForEach-Object { $_.Name })",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\app\\\\Services\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\app\\\\Http\\\\Controllers\\\\Api\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\resources\\\\views\\\\billing\")",
+      "PowerShell(Get-ChildItem \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\resources\" -Recurse | ForEach-Object { $_.FullName })",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\resources\\\\js\\\\pages\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\resources\\\\js\\\\components\\\\ui\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\resources\\\\js\\\\layouts\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\lib\")"
+    ]
+  }
+}
