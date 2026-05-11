@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import AppLayout from '../layouts/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -12,6 +12,8 @@ import { Download, Eye, CheckCircle, PlusCircle } from 'lucide-react';
 const STATUS_OPTS = ['', 'draft', 'sent', 'paid', 'overdue'];
 
 export default function Invoices({ invoices, billableSummary, isAdmin, branches }) {
+    const { props } = usePage();
+    const flash = props.flash ?? {};
     const [filterStatus, setFilterStatus] = useState('');
     const [showGenerate, setShowGenerate] = useState(false);
 
@@ -39,6 +41,18 @@ export default function Invoices({ invoices, billableSummary, isAdmin, branches 
 
     return (
         <AppLayout title="Invoices">
+            {/* Flash messages */}
+            {flash.success && (
+                <div className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                    <span className="font-medium">✓</span> {flash.success}
+                </div>
+            )}
+            {flash.error && (
+                <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                    <span className="font-medium">✕</span> {flash.error}
+                </div>
+            )}
+
             {/* Billable summary — admin only */}
             {isAdmin && (billableSummary ?? []).length > 0 && (
                 <Card className="mb-4 border-amber-200 bg-amber-50">

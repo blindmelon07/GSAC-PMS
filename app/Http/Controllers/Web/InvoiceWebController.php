@@ -37,8 +37,12 @@ class InvoiceWebController extends Controller
 
     public function generate(GenerateInvoiceRequest $request)
     {
-        $invoice = $this->invoiceService->generate($request->validated(), $request->user());
-        return redirect('/invoices')->with('success', "Invoice {$invoice->invoice_number} generated.");
+        try {
+            $invoice = $this->invoiceService->generate($request->validated(), $request->user());
+            return redirect('/invoices')->with('success', "Invoice {$invoice->invoice_number} generated successfully.");
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function preview(Invoice $invoice)
