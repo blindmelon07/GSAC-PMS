@@ -8,26 +8,26 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 12px; color: #1a1a2e; }
 
-  .header { background: #185FA5; color: #fff; padding: 28px 40px; }
+  .header { background: #ffffff; padding: 24px 40px; border-bottom: 2px solid #185FA5; }
   .header-row { display: table; width: 100%; }
   .header-left, .header-right { display: table-cell; vertical-align: middle; }
   .header-right { text-align: right; }
-  .org-name { font-size: 20px; font-weight: bold; }
-  .invoice-label { font-size: 22px; font-weight: bold; letter-spacing: 1px; }
-  .invoice-number { font-size: 12px; opacity: .75; font-family: monospace; }
+  .header-sub { font-size: 10px; color: #666; margin-top: 4px; }
+  .invoice-label { font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #185FA5; }
+  .invoice-number { font-size: 11px; color: #888; font-family: monospace; margin-top: 3px; }
 
-  .meta-section { padding: 20px 40px; background: #f8f9fc; border-bottom: 1px solid #e8e8e8; }
+  .meta-section { padding: 18px 40px; background: #f8f9fc; border-bottom: 1px solid #e8e8e8; }
   .meta-table { width: 100%; }
   .meta-table td { width: 25%; padding-right: 16px; vertical-align: top; }
-  .meta-label { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #888; }
-  .meta-value { font-size: 12px; font-weight: bold; }
+  .meta-label { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #888; margin-bottom: 3px; }
+  .meta-value { font-size: 12px; font-weight: bold; color: #1a1a2e; }
 
   .address-section { padding: 18px 40px; border-bottom: 1px solid #e8e8e8; }
   .address-table { width: 100%; }
   .address-table td { width: 50%; vertical-align: top; padding-right: 24px; }
   .address-label { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #888;
                    border-bottom: 2px solid #185FA5; padding-bottom: 4px; margin-bottom: 8px; }
-  .address-name { font-size: 13px; font-weight: bold; }
+  .address-name { font-size: 13px; font-weight: bold; color: #1a1a2e; }
 
   .items-section { padding: 18px 40px; }
   .items-table { width: 100%; border-collapse: collapse; }
@@ -38,7 +38,7 @@
   .text-right { text-align: right; }
 
   .totals-section { padding: 0 40px 20px; text-align: right; }
-  .totals-box { display: inline-block; width: 260px; border: 1px solid #dde3f0; border-radius: 6px; }
+  .totals-box { display: inline-block; width: 260px; border: 1px solid #dde3f0; border-radius: 6px; overflow: hidden; }
   .totals-row { display: table; width: 100%; padding: 7px 14px; border-bottom: 1px solid #eee; }
   .totals-row:last-child { background: #185FA5; color: #fff; border-bottom: none; }
   .totals-label, .totals-value { display: table-cell; font-size: 11px; }
@@ -53,8 +53,8 @@
 <div class="header">
   <div class="header-row">
     <div class="header-left">
-      <img src="{{ public_path('images/GSACLogo.png') }}" alt="GSAC" style="height:48px;width:auto;object-fit:contain;" />
-      <div style="font-size:11px;opacity:.8;margin-top:4px;">Main Branch — Supply &amp; Logistics Division</div>
+      <img src="{{ public_path('images/GSACLogo-pdf.png') }}" alt="GSAC" style="height:52px;width:auto;" />
+      <div class="header-sub">Main Branch — Supply &amp; Logistics Division</div>
     </div>
     <div class="header-right">
       <div class="invoice-label">INVOICE</div>
@@ -77,12 +77,12 @@
     <td>
       <div class="address-label">Bill From</div>
       <div class="address-name">GSAC — Main Branch</div>
-      <div style="font-size:11px;color:#555">Supply &amp; Logistics Division<br>billing@gsac.ph</div>
+      <div style="font-size:11px;color:#555;margin-top:4px;">Supply &amp; Logistics Division<br>billing@gsac.ph</div>
     </td>
     <td>
       <div class="address-label">Bill To</div>
       <div class="address-name">{{ $branch->name }}</div>
-      <div style="font-size:11px;color:#555">
+      <div style="font-size:11px;color:#555;margin-top:4px;">
         {{ $branch->code }}@if($branch->city)<br>{{ $branch->city }}@endif
         @if($branch->contact_email)<br>{{ $branch->contact_email }}@endif
       </div>
