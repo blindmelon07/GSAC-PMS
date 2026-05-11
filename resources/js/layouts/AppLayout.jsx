@@ -1,14 +1,15 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
-    LayoutDashboard, ClipboardList, FileText, Building2, LogOut, ChevronRight,
+    LayoutDashboard, ClipboardList, FileText, Building2, LogOut, ChevronRight, Tag,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const nav = [
-    { label: 'Dashboard',   href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Form Orders', href: '/orders',     icon: ClipboardList },
-    { label: 'Invoices',    href: '/invoices',   icon: FileText },
-    { label: 'Branches',    href: '/branches',   icon: Building2 },
+    { label: 'Dashboard',   href: '/dashboard',   icon: LayoutDashboard },
+    { label: 'Form Orders', href: '/orders',       icon: ClipboardList },
+    { label: 'Invoices',    href: '/invoices',     icon: FileText },
+    { label: 'Form Types',  href: '/form-types',   icon: Tag, adminOnly: true },
+    { label: 'Branches',    href: '/branches',     icon: Building2 },
 ];
 
 function NavItem({ item, current }) {
@@ -49,7 +50,7 @@ export default function AppLayout({ children, title }) {
                 </div>
 
                 <nav className="flex-1 space-y-0.5 px-3 py-3">
-                    {nav.map((item) => (
+                    {nav.filter(item => !item.adminOnly || user?.role === 'admin').map((item) => (
                         <NavItem key={item.href} item={item} current={url} />
                     ))}
                 </nav>

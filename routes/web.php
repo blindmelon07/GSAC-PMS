@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\BranchWebController;
 use App\Http\Controllers\Web\DashboardWebController;
+use App\Http\Controllers\Web\FormTypeWebController;
 use App\Http\Controllers\Web\InvoiceWebController;
 use App\Http\Controllers\Web\OrderWebController;
 use Illuminate\Support\Facades\Route;
@@ -23,7 +24,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoices/{invoice}/download',       [InvoiceWebController::class, 'download']);
     Route::patch('/invoices/{invoice}/mark-paid',    [InvoiceWebController::class, 'markPaid']);
 
-    Route::get('/branches', BranchWebController::class);
+    Route::get('/branches',              [BranchWebController::class, 'index']);
+    Route::post('/branches',             [BranchWebController::class, 'store']);
+    Route::patch('/branches/{branch}',   [BranchWebController::class, 'update']);
+
+    Route::get('/form-types',              [FormTypeWebController::class, 'index']);
+    Route::post('/form-types',             [FormTypeWebController::class, 'store']);
+    Route::patch('/form-types/{formType}', [FormTypeWebController::class, 'update']);
 });
 
 // Auth routes (login/logout) via Sanctum session or simple form auth
