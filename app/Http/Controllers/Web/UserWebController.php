@@ -16,9 +16,23 @@ class UserWebController extends Controller
     {
         abort_unless($request->user()->isAdmin(), 403);
 
+        $query = User::with('branch')->orderBy('name');
+
+        if ($request->filled('search')) {
+            $query->where(fn ($q) =>
+                $q->where('name', 'like', "%{$request->search}%")
+                  ->orWhere('email', 'like', "%{$request->search}%")
+            );
+        }
+
+        if ($request->filled('role'))      $query->where('role', $request->role);
+        if ($request->filled('branch_id')) $query->where('branch_id', $request->branch_id);
+        if ($request->filled('status'))    $query->where('is_active', $request->status === 'active');
+
         return Inertia::render('Users', [
-            'users'    => User::with('branch')->orderBy('name')->get(),
+            'users'    => $query->paginate(15)->withQueryString(),
             'branches' => Branch::active()->orderBy('name')->get(),
+            'filters'  => $request->only('search', 'role', 'branch_id', 'status'),
         ]);
     }
 

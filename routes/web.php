@@ -6,6 +6,7 @@ use App\Http\Controllers\Web\FormTypeWebController;
 use App\Http\Controllers\Web\InvoiceWebController;
 use App\Http\Controllers\Web\OrderWebController;
 use App\Http\Controllers\Web\ProfileWebController;
+use App\Http\Controllers\Web\ReportWebController;
 use App\Http\Controllers\Web\SettingWebController;
 use App\Http\Controllers\Web\UserWebController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/branches/{branch}',   [BranchWebController::class, 'update']);
 
     Route::post('/profile/password', [ProfileWebController::class, 'changePassword']);
+
+    Route::get('/reports', [ReportWebController::class, 'index']);
 
     Route::get('/settings',  [SettingWebController::class, 'index']);
     Route::post('/settings', [SettingWebController::class, 'update']);
