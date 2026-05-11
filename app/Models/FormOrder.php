@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Setting;
 
 class FormOrder extends Model
 {
@@ -23,7 +24,7 @@ class FormOrder extends Model
     const PRIORITY_NORMAL = 'normal';
     const PRIORITY_URGENT = 'urgent';
 
-    const TAX_RATE = 0.12;
+    const TAX_RATE = 0.12; // fallback if settings table unavailable
 
     protected $fillable = [
         'reference_number', 'branch_id', 'requested_by',
@@ -92,11 +93,12 @@ class FormOrder extends Model
     public function recalculateTotals(): void
     {
         $subtotal = $this->items->sum('line_total');
+        $taxRate  = (float) Setting::getValue('vat_rate', self::TAX_RATE * 100) / 100;
 
         $this->update([
             'subtotal'     => $subtotal,
-            'tax_amount'   => round($subtotal * self::TAX_RATE, 2),
-            'total_amount' => round($subtotal * (1 + self::TAX_RATE), 2),
+            'tax_amount'   => round($subtotal * $taxRate, 2),
+            'total_amount' => round($subtotal * (1 + $taxRate), 2),
         ]);
     }
 }

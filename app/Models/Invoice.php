@@ -20,7 +20,7 @@ class Invoice extends Model
     protected $fillable = [
         'invoice_number', 'branch_id', 'generated_by',
         'billing_period', 'period_start', 'period_end', 'due_date',
-        'status', 'subtotal', 'tax_rate', 'tax_amount', 'total_amount',
+        'status', 'subtotal', 'tax_rate', 'discount_rate', 'discount_amount', 'tax_amount', 'total_amount',
         'pdf_path', 'sent_at', 'paid_at', 'notes',
     ];
 
@@ -29,8 +29,10 @@ class Invoice extends Model
         'period_end'   => 'date',
         'due_date'     => 'date',
         'subtotal'     => 'decimal:2',
-        'tax_rate'     => 'decimal:2',
-        'tax_amount'   => 'decimal:2',
+        'tax_rate'       => 'decimal:2',
+        'discount_rate'  => 'decimal:2',
+        'discount_amount'=> 'decimal:2',
+        'tax_amount'     => 'decimal:2',
         'total_amount' => 'decimal:2',
         'sent_at'      => 'datetime',
         'paid_at'      => 'datetime',

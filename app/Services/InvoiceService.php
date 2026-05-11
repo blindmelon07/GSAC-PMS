@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Branch;
 use App\Models\FormOrder;
 use App\Models\Invoice;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -33,25 +34,30 @@ class InvoiceService
         abort_if($orders->isEmpty(), 422, 'No unbilled delivered orders found for this branch in the selected period.');
 
         return DB::transaction(function () use ($branch, $orders, $data, $generatedBy, $periodStart, $periodEnd) {
-            $subtotal    = $orders->sum('subtotal');
-            $taxRate     = 12.00;
-            $taxAmount   = round($subtotal * ($taxRate / 100), 2);
-            $totalAmount = $subtotal + $taxAmount;
-            $dueDate     = now()->addDays($data['due_days'] ?? 30);
+            $subtotal       = $orders->sum('subtotal');
+            $taxRate        = (float) Setting::getValue('vat_rate', 12.00);
+            $discountRate   = (float) Setting::getValue('discount_rate', 0.00);
+            $discountAmount = round($subtotal * ($discountRate / 100), 2);
+            $taxableAmount  = $subtotal - $discountAmount;
+            $taxAmount      = round($taxableAmount * ($taxRate / 100), 2);
+            $totalAmount    = $taxableAmount + $taxAmount;
+            $dueDate        = now()->addDays($data['due_days'] ?? 30);
 
             $invoice = Invoice::create([
-                'branch_id'      => $branch->id,
-                'generated_by'   => $generatedBy->id,
-                'billing_period' => $periodStart->format('F Y'),
-                'period_start'   => $periodStart->toDateString(),
-                'period_end'     => $periodEnd->toDateString(),
-                'due_date'       => $dueDate->toDateString(),
-                'status'         => Invoice::STATUS_DRAFT,
-                'subtotal'       => $subtotal,
-                'tax_rate'       => $taxRate,
-                'tax_amount'     => $taxAmount,
-                'total_amount'   => $totalAmount,
-                'notes'          => $data['notes'] ?? null,
+                'branch_id'       => $branch->id,
+                'generated_by'    => $generatedBy->id,
+                'billing_period'  => $periodStart->format('F Y'),
+                'period_start'    => $periodStart->toDateString(),
+                'period_end'      => $periodEnd->toDateString(),
+                'due_date'        => $dueDate->toDateString(),
+                'status'          => Invoice::STATUS_DRAFT,
+                'subtotal'        => $subtotal,
+                'discount_rate'   => $discountRate,
+                'discount_amount' => $discountAmount,
+                'tax_rate'        => $taxRate,
+                'tax_amount'      => $taxAmount,
+                'total_amount'    => $totalAmount,
+                'notes'           => $data['notes'] ?? null,
             ]);
 
             foreach ($orders as $order) {

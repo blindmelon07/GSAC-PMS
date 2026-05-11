@@ -5,6 +5,9 @@ use App\Http\Controllers\Web\DashboardWebController;
 use App\Http\Controllers\Web\FormTypeWebController;
 use App\Http\Controllers\Web\InvoiceWebController;
 use App\Http\Controllers\Web\OrderWebController;
+use App\Http\Controllers\Web\ProfileWebController;
+use App\Http\Controllers\Web\SettingWebController;
+use App\Http\Controllers\Web\UserWebController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect('/dashboard'));
@@ -27,6 +30,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/branches',              [BranchWebController::class, 'index']);
     Route::post('/branches',             [BranchWebController::class, 'store']);
     Route::patch('/branches/{branch}',   [BranchWebController::class, 'update']);
+
+    Route::post('/profile/password', [ProfileWebController::class, 'changePassword']);
+
+    Route::get('/settings',  [SettingWebController::class, 'index']);
+    Route::post('/settings', [SettingWebController::class, 'update']);
+
+    Route::get('/users',           [UserWebController::class, 'index']);
+    Route::post('/users',          [UserWebController::class, 'store']);
+    Route::patch('/users/{user}',  [UserWebController::class, 'update']);
 
     Route::get('/form-types',              [FormTypeWebController::class, 'index']);
     Route::post('/form-types',             [FormTypeWebController::class, 'store']);
