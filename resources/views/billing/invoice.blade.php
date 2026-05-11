@@ -76,8 +76,8 @@
   <table class="address-table"><tr>
     <td>
       <div class="address-label">Bill From</div>
-      <div class="address-name">FormFlow — Main Branch</div>
-      <div style="font-size:11px;color:#555">Supply &amp; Logistics Division<br>billing@formflow.ph</div>
+      <div class="address-name">GSAC — Main Branch</div>
+      <div style="font-size:11px;color:#555">Supply &amp; Logistics Division<br>billing@gsac.ph</div>
     </td>
     <td>
       <div class="address-label">Bill To</div>
