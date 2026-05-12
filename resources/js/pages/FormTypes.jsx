@@ -18,10 +18,13 @@ const EMPTY_FORM = {
 };
 
 function PriceInput({ value, onChange, className = 'h-7 w-24 text-xs' }) {
+    const safe = (value !== null && value !== undefined && value !== '' && !Number.isNaN(Number(value)))
+        ? value
+        : '';
     return (
         <Input
             type="number"
-            value={value ?? ''}
+            value={safe}
             onChange={e => onChange(e.target.value)}
             className={className}
             min={0} step="0.01" required
@@ -41,7 +44,12 @@ export default function FormTypes({ formTypes }) {
 
     function startEdit(ft) {
         setEditingId(ft.id);
-        setEditData({ ...ft });
+        setEditData({
+            ...ft,
+            price_consumable:     ft.price_consumable     ?? '',
+            price_non_consumable: ft.price_non_consumable ?? '',
+            unit_price:           ft.unit_price           ?? '',
+        });
         setShowCreate(false);
     }
 

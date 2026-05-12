@@ -13,7 +13,7 @@ class ProfileWebController extends Controller
     {
         $request->validate([
             'current_password' => ['required', 'string', 'current_password'],
-            'password'         => ['required', 'string', Password::min(8)->uncompromised(), 'confirmed'],
+            'password'         => ['required', 'string', Password::min(8), 'confirmed'],
         ]);
 
         $request->user()->update([

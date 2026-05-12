@@ -35,7 +35,7 @@ test('branch staff can submit an order', function () {
     $this->actingAs($this->branchStaff)
         ->postJson('/api/v1/form-orders', [
             'priority' => 'normal',
-            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'quantity' => 500]],
+            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'printer_type' => 'consumable', 'quantity' => 500]],
         ])
         ->assertCreated()
         ->assertJsonPath('data.status', 'pending');
@@ -45,7 +45,7 @@ test('branch manager can submit an order', function () {
     $this->actingAs($this->branchManager)
         ->postJson('/api/v1/form-orders', [
             'priority' => 'urgent',
-            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'quantity' => 200]],
+            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'printer_type' => 'consumable', 'quantity' => 200]],
         ])
         ->assertCreated()
         ->assertJsonPath('data.status', 'pending')
@@ -58,7 +58,7 @@ test('admin cannot submit orders (no branch assigned by default)', function () {
     $this->actingAs($adminWithNoBranch)
         ->postJson('/api/v1/form-orders', [
             'priority' => 'normal',
-            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'quantity' => 500]],
+            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'printer_type' => 'consumable', 'quantity' => 500]],
         ])
         ->assertForbidden();
 });
@@ -69,7 +69,7 @@ test('quantity must meet minimum order requirement', function () {
     $this->actingAs($this->branchStaff)
         ->postJson('/api/v1/form-orders', [
             'priority' => 'normal',
-            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'quantity' => 5]],
+            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'printer_type' => 'consumable', 'quantity' => 1]],
         ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['items.0.quantity']);
@@ -80,8 +80,8 @@ test('duplicate form types in a single order are rejected', function () {
         ->postJson('/api/v1/form-orders', [
             'priority' => 'normal',
             'items'    => [
-                ['form_type_id' => $this->withdrawalSlip->id, 'quantity' => 100],
-                ['form_type_id' => $this->withdrawalSlip->id, 'quantity' => 200],
+                ['form_type_id' => $this->withdrawalSlip->id, 'printer_type' => 'consumable', 'quantity' => 100],
+                ['form_type_id' => $this->withdrawalSlip->id, 'printer_type' => 'consumable', 'quantity' => 200],
             ],
         ])
         ->assertUnprocessable()
@@ -101,7 +101,7 @@ test('invalid priority value is rejected', function () {
     $this->actingAs($this->branchStaff)
         ->postJson('/api/v1/form-orders', [
             'priority' => 'extreme',
-            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'quantity' => 500]],
+            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'printer_type' => 'consumable', 'quantity' => 500]],
         ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['priority']);
@@ -109,7 +109,7 @@ test('invalid priority value is rejected', function () {
 
 test('items array must have at least one item', function () {
     $this->actingAs($this->branchStaff)
-        ->postJson('/api/v1/form-orders', ['priority' => 'normal', 'items' => []])
+        ->postJson('/api/v1/form-orders', ['priority' => 'normal', 'items' => [], 'printer_type' => 'consumable'])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['items']);
 });
@@ -120,7 +120,7 @@ test('order totals are calculated correctly with 12% VAT', function () {
     $response = $this->actingAs($this->branchStaff)
         ->postJson('/api/v1/form-orders', [
             'priority' => 'normal',
-            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'quantity' => 1000]],
+            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'printer_type' => 'consumable', 'quantity' => 1000]],
         ])
         ->assertCreated();
 
@@ -285,7 +285,7 @@ test('order reference number is auto-generated with correct format', function ()
     $response = $this->actingAs($this->branchStaff)
         ->postJson('/api/v1/form-orders', [
             'priority' => 'normal',
-            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'quantity' => 500]],
+            'items'    => [['form_type_id' => $this->withdrawalSlip->id, 'printer_type' => 'consumable', 'quantity' => 500]],
         ])
         ->assertCreated();
 
@@ -337,11 +337,15 @@ test('unauthenticated requests are rejected', function () {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function createPendingOrder(User $user, FormType $formType): FormOrder
+function createPendingOrder(User $user, FormType $formType, string $printerType = 'consumable'): FormOrder
 {
     $response = test()->actingAs($user)->postJson('/api/v1/form-orders', [
         'priority' => 'normal',
-        'items'    => [['form_type_id' => $formType->id, 'quantity' => 500]],
+        'items'    => [[
+            'form_type_id' => $formType->id,
+            'printer_type' => $printerType,
+            'quantity'     => 500,
+        ]],
     ]);
 
     return FormOrder::find($response->json('data.id'));

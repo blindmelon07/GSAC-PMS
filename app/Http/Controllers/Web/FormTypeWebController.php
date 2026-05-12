@@ -26,7 +26,6 @@ class FormTypeWebController extends Controller
             'code'          => ['required', 'string', 'max:20', 'unique:form_types,code'],
             'name'          => ['required', 'string', 'max:255'],
             'description'   => ['nullable', 'string'],
-            'unit_price'           => ['required', 'numeric', 'min:0'],
             'price_consumable'     => ['required', 'numeric', 'min:0'],
             'price_non_consumable' => ['required', 'numeric', 'min:0'],
             'unit_label'           => ['required', 'string', 'max:50'],
@@ -34,6 +33,9 @@ class FormTypeWebController extends Controller
             'maximum_order'        => ['nullable', 'integer', 'min:1'],
             'is_active'            => ['boolean'],
         ]);
+
+        // Keep unit_price in sync with consumable price for backward compatibility
+        $data['unit_price'] = $data['price_consumable'];
 
         FormType::create($data);
 
@@ -45,14 +47,17 @@ class FormTypeWebController extends Controller
         abort_unless($request->user()->isAdmin(), 403);
 
         $data = $request->validate([
-            'name'          => ['required', 'string', 'max:255'],
-            'description'   => ['nullable', 'string'],
-            'unit_price'    => ['required', 'numeric', 'min:0'],
-            'unit_label'    => ['required', 'string', 'max:50'],
-            'minimum_order' => ['required', 'integer', 'min:1'],
-            'maximum_order' => ['nullable', 'integer', 'min:1'],
-            'is_active'     => ['boolean'],
+            'name'                 => ['required', 'string', 'max:255'],
+            'description'          => ['nullable', 'string'],
+            'price_consumable'     => ['required', 'numeric', 'min:0'],
+            'price_non_consumable' => ['required', 'numeric', 'min:0'],
+            'unit_label'           => ['required', 'string', 'max:50'],
+            'minimum_order'        => ['required', 'integer', 'min:1'],
+            'maximum_order'        => ['nullable', 'integer', 'min:1'],
+            'is_active'            => ['boolean'],
         ]);
+
+        $data['unit_price'] = $data['price_consumable'];
 
         $formType->update($data);
 
