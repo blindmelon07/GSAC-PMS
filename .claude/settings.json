@@ -9,7 +9,10 @@
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\resources\\\\js\\\\pages\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\resources\\\\js\\\\components\\\\ui\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\resources\\\\js\\\\layouts\")",
-      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\lib\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\\\\lib\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\xampp2\\\\htdocs\\\\gsac-printing\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)"
     ]
   }
 }

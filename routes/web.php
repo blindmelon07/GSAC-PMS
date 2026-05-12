@@ -5,6 +5,8 @@ use App\Http\Controllers\Web\DashboardWebController;
 use App\Http\Controllers\Web\FormTypeWebController;
 use App\Http\Controllers\Web\InvoiceWebController;
 use App\Http\Controllers\Web\OrderWebController;
+use App\Http\Controllers\Web\ProductWebController;
+use App\Http\Controllers\Web\ProductOrderWebController;
 use App\Http\Controllers\Web\ProfileWebController;
 use App\Http\Controllers\Web\ReportWebController;
 use App\Http\Controllers\Web\SettingWebController;
@@ -47,6 +49,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/form-types',              [FormTypeWebController::class, 'index']);
     Route::post('/form-types',             [FormTypeWebController::class, 'store']);
     Route::patch('/form-types/{formType}', [FormTypeWebController::class, 'update']);
+
+    Route::get('/products',             [ProductWebController::class, 'index']);
+    Route::post('/products',            [ProductWebController::class, 'store']);
+    Route::patch('/products/{product}', [ProductWebController::class, 'update']);
+
+    Route::get('/product-orders',                              [ProductOrderWebController::class, 'index']);
+    Route::post('/product-orders',                             [ProductOrderWebController::class, 'store']);
+    Route::patch('/product-orders/{productOrder}/approve',     [ProductOrderWebController::class, 'approve']);
+    Route::patch('/product-orders/{productOrder}/reject',      [ProductOrderWebController::class, 'reject']);
+    Route::patch('/product-orders/{productOrder}/deliver',     [ProductOrderWebController::class, 'deliver']);
 });
 
 // Auth routes (login/logout) via Sanctum session or simple form auth
