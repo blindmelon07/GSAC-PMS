@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input, Select } from '../components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { formatPeso, statusColor } from '../lib/utils';
-import { BarChart3, FileText, Building2, Tag, Search } from 'lucide-react';
+import { BarChart3, FileText, Building2, Tag, Search, Download } from 'lucide-react';
 
 const REPORT_TYPES = [
     { key: 'orders',     label: 'Orders',           icon: BarChart3  },
@@ -228,26 +228,20 @@ export default function Reports({ type, from, to, branchId, results, summary, br
     const [toDate,         setToDate]         = useState(to        ?? '');
     const [selectedBranch, setSelectedBranch] = useState(branchId ?? '');
 
-    function applyFilters(overrides = {}) {
-        const params = {
+    function run(overrides = {}) {
+        router.get('/reports', {
             type,
             from:      fromDate,
             to:        toDate,
+            branch_id: selectedBranch || undefined,
             ...overrides,
-        };
-        if (selectedBranch && !overrides.hasOwnProperty('branch_id')) {
-            params.branch_id = selectedBranch;
-        }
-        router.get('/reports', params);
+        }, { preserveState: true, replace: true });
     }
 
-    function switchType(key) {
-        router.get('/reports', {
-            type:      key,
-            from:      fromDate,
-            to:        toDate,
-            branch_id: selectedBranch || undefined,
-        });
+    function exportUrl() {
+        const params = new URLSearchParams({ type, from: fromDate, to: toDate });
+        if (selectedBranch) params.set('branch_id', selectedBranch);
+        return `/reports/export?${params.toString()}`;
     }
 
     const showBranchFilter = type !== 'branches';
@@ -259,7 +253,7 @@ export default function Reports({ type, from, to, branchId, results, summary, br
                 {REPORT_TYPES.map(({ key, label, icon: Icon }) => (
                     <button
                         key={key}
-                        onClick={() => switchType(key)}
+                        onClick={() => run({ type: key })}
                         className={[
                             'flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
                             type === key
@@ -309,12 +303,16 @@ export default function Reports({ type, from, to, branchId, results, summary, br
                                 </Select>
                             </div>
                         )}
-                        <Button
-                            onClick={() => applyFilters()}
-                            className="ml-auto"
-                        >
-                            <Search size={14} /> Run Report
-                        </Button>
+                        <div className="ml-auto flex gap-2">
+                            <Button onClick={() => run()}>
+                                <Search size={14} /> Run Report
+                            </Button>
+                            <a href={exportUrl()} target="_blank" rel="noreferrer">
+                                <Button type="button" variant="outline">
+                                    <Download size={14} /> Export PDF
+                                </Button>
+                            </a>
+                        </div>
                     </div>
                 </CardContent>
             </Card>

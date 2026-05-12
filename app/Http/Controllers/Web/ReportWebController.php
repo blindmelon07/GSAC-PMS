@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\FormOrder;
 use App\Models\FormOrderItem;
 use App\Models\Invoice;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -36,14 +37,102 @@ class ReportWebController extends Controller
             'branchId' => $branchId,
             'results'  => $results['data'],
             'summary'  => $results['summary'],
-            'branches' => Branch::select('id', 'name', 'code')->orderBy('name')->get(),
+            /** @psalm-suppress TooFewArguments */
+            'branches' => Branch::query()->orderBy('name')->get(),
         ]);
+    }
+
+    public function export(Request $request)
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+
+        $type     = $request->input('type', 'orders');
+        $from     = $request->filled('from') ? $request->input('from') : now()->startOfMonth()->toDateString();
+        $to       = $request->filled('to')   ? $request->input('to')   : now()->toDateString();
+        $branchId = $request->filled('branch_id') ? $request->input('branch_id') : null;
+
+        $results = match ($type) {
+            'invoices'   => $this->invoiceReport($from, $to, $branchId),
+            'branches'   => $this->branchReport($from, $to),
+            'form-types' => $this->formTypeReport($from, $to, $branchId),
+            default      => $this->ordersReport($from, $to, $branchId),
+        };
+
+        $branch   = $branchId ? Branch::query()->where('id', $branchId)->first() : null;
+        $typeLabel = match ($type) {
+            'invoices'   => 'Invoices',
+            'branches'   => 'Branch Summary',
+            'form-types' => 'Form Types Usage',
+            default      => 'Orders',
+        };
+
+        $filename = "report-{$type}-{$from}-to-{$to}.pdf";
+
+        $logoSrc = $this->resizedLogoDataUri(public_path('images/GSACLogo.png'), 160, 50);
+
+        $pdf = Pdf::loadView('reports.report', [
+            'type'        => $type,
+            'typeLabel'   => $typeLabel,
+            'from'        => $from,
+            'to'          => $to,
+            'branch'      => $branch,
+            'data'        => $results['data'],
+            'summary'     => $results['summary'],
+            'generatedBy' => $request->user()->name,
+            'generatedAt' => now()->format('d M Y H:i'),
+            'logoSrc'     => $logoSrc,
+        ])
+        ->setPaper('a4', 'landscape')
+        ->setOptions([
+            'defaultFont'             => 'DejaVu Sans',
+            'isRemoteEnabled'         => false,
+            'isHtml5ParserEnabled'    => false,
+            'isFontSubsettingEnabled' => true,
+            'dpi'                     => 72,
+            'enable_php'              => false,
+            'enable_javascript'       => false,
+            'enable_css_float'        => false,
+        ]);
+
+        return response()->streamDownload(
+            fn () => print($pdf->output()),
+            $filename,
+            ['Content-Type' => 'application/pdf']
+        );
+    }
+
+    private function resizedLogoDataUri(string $path, int $maxW, int $maxH): string
+    {
+        if (!file_exists($path) || !function_exists('imagecreatefrompng')) {
+            return '';
+        }
+
+        [$srcW, $srcH] = getimagesize($path);
+        $ratio  = min($maxW / $srcW, $maxH / $srcH);
+        $dstW   = (int) round($srcW * $ratio);
+        $dstH   = (int) round($srcH * $ratio);
+
+        $src = imagecreatefrompng($path);
+        $dst = imagecreatetruecolor($dstW, $dstH);
+
+        // White background (DomPDF handles JPEG faster than transparent PNG)
+        imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $dstW, $dstH, $srcW, $srcH);
+
+        ob_start();
+        imagejpeg($dst, null, 85);
+        $jpeg = ob_get_clean();
+
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return 'data:image/jpeg;base64,' . base64_encode($jpeg);
     }
 
     private function ordersReport(string $from, string $to, ?string $branchId): array
     {
         $query = FormOrder::with(['branch', 'requester'])
-            ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->whereBetween('created_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
             ->orderByDesc('created_at');
 
         if ($branchId) $query->where('branch_id', $branchId);
@@ -74,7 +163,7 @@ class ReportWebController extends Controller
     private function invoiceReport(string $from, string $to, ?string $branchId): array
     {
         $query = Invoice::with(['branch', 'generatedBy'])
-            ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->whereBetween('created_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
             ->orderByDesc('created_at');
 
         if ($branchId) $query->where('branch_id', $branchId);
@@ -110,19 +199,19 @@ class ReportWebController extends Controller
     {
         $branches = Branch::notMain()
             ->withCount(['formOrders as total_orders' => fn ($q) =>
-                $q->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                $q->whereBetween('created_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
             ])
             ->withCount(['formOrders as pending_orders' => fn ($q) =>
-                $q->pending()->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                $q->pending()->whereBetween('created_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
             ])
             ->withCount(['formOrders as delivered_orders' => fn ($q) =>
-                $q->delivered()->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                $q->delivered()->whereBetween('created_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
             ])
             ->withCount(['formOrders as billed_orders' => fn ($q) =>
-                $q->billed()->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                $q->billed()->whereBetween('created_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
             ])
             ->withSum(['formOrders as total_amount' => fn ($q) =>
-                $q->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                $q->whereBetween('created_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
             ], 'total_amount')
             ->orderByDesc('total_orders')
             ->get();
@@ -150,7 +239,7 @@ class ReportWebController extends Controller
     {
         $query = FormOrderItem::with('formType')
             ->whereHas('formOrder', function ($q) use ($from, $to, $branchId) {
-                $q->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
+                $q->whereBetween('created_at', ["{$from} 00:00:00", "{$to} 23:59:59"]);
                 if ($branchId) $q->where('branch_id', $branchId);
             })
             ->select('form_type_id',

@@ -34,7 +34,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/profile/password', [ProfileWebController::class, 'changePassword']);
 
-    Route::get('/reports', [ReportWebController::class, 'index']);
+    Route::get('/reports',        [ReportWebController::class, 'index']);
+    Route::get('/reports/export', [ReportWebController::class, 'export']);
 
     Route::get('/settings',  [SettingWebController::class, 'index']);
     Route::post('/settings', [SettingWebController::class, 'update']);

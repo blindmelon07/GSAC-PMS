@@ -26,11 +26,13 @@ class FormTypeWebController extends Controller
             'code'          => ['required', 'string', 'max:20', 'unique:form_types,code'],
             'name'          => ['required', 'string', 'max:255'],
             'description'   => ['nullable', 'string'],
-            'unit_price'    => ['required', 'numeric', 'min:0'],
-            'unit_label'    => ['required', 'string', 'max:50'],
-            'minimum_order' => ['required', 'integer', 'min:1'],
-            'maximum_order' => ['nullable', 'integer', 'min:1'],
-            'is_active'     => ['boolean'],
+            'unit_price'           => ['required', 'numeric', 'min:0'],
+            'price_consumable'     => ['required', 'numeric', 'min:0'],
+            'price_non_consumable' => ['required', 'numeric', 'min:0'],
+            'unit_label'           => ['required', 'string', 'max:50'],
+            'minimum_order'        => ['required', 'integer', 'min:1'],
+            'maximum_order'        => ['nullable', 'integer', 'min:1'],
+            'is_active'            => ['boolean'],
         ]);
 
         FormType::create($data);

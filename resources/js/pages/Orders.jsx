@@ -22,7 +22,7 @@ export default function Orders({ orders, filters, isAdmin, formTypes }) {
     const [showForm, setShowForm] = useState(false);
 
     // New order form state
-    const [items, setItems]       = useState([{ form_type_id: '', quantity: '' }]);
+    const [items, setItems]       = useState([{ form_type_id: '', printer_type: 'consumable', quantity: '' }]);
     const [orderPriority, setOrderPriority] = useState('normal');
     const [notes, setNotes]       = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -31,7 +31,7 @@ export default function Orders({ orders, filters, isAdmin, formTypes }) {
         router.get('/orders', { search, status, priority, ...overrides }, { preserveState: true, replace: true });
     }
 
-    function addItem() { setItems([...items, { form_type_id: '', quantity: '' }]); }
+    function addItem() { setItems([...items, { form_type_id: '', printer_type: 'consumable', quantity: '' }]); }
     function removeItem(i) { setItems(items.filter((_, idx) => idx !== i)); }
     function updateItem(i, key, val) {
         setItems(items.map((it, idx) => idx === i ? { ...it, [key]: val } : it));
@@ -43,7 +43,11 @@ export default function Orders({ orders, filters, isAdmin, formTypes }) {
         router.post('/orders', {
             priority: orderPriority,
             notes,
-            items: items.map(it => ({ form_type_id: Number(it.form_type_id), quantity: Number(it.quantity) })),
+            items: items.map(it => ({
+                form_type_id: Number(it.form_type_id),
+                printer_type: it.printer_type,
+                quantity:     Number(it.quantity),
+            })),
         }, {
             onFinish: () => { setSubmitting(false); setShowForm(false); setItems([{ form_type_id: '', quantity: '' }]); setNotes(''); },
         });
@@ -105,34 +109,50 @@ export default function Orders({ orders, filters, isAdmin, formTypes }) {
 
                             <div className="space-y-2">
                                 <label className="text-xs font-medium text-gray-600">Items</label>
-                                {items.map((item, i) => (
-                                    <div key={i} className="flex gap-2">
-                                        <Select
-                                            className="flex-1"
-                                            value={item.form_type_id}
-                                            onChange={e => updateItem(i, 'form_type_id', e.target.value)}
-                                            required
-                                        >
-                                            <option value="">Select form type…</option>
-                                            {(formTypes ?? []).map(ft => (
-                                                <option key={ft.id} value={ft.id}>
-                                                    {ft.name} — ₱{ft.unit_price} (min {ft.minimum_order})
-                                                </option>
-                                            ))}
-                                        </Select>
-                                        <Input
-                                            type="number"
-                                            className="w-28"
-                                            placeholder="Qty"
-                                            value={item.quantity}
-                                            onChange={e => updateItem(i, 'quantity', e.target.value)}
-                                            required min={1}
-                                        />
-                                        {items.length > 1 && (
-                                            <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(i)}>✕</Button>
-                                        )}
-                                    </div>
-                                ))}
+                                {items.map((item, i) => {
+                                    const ft = (formTypes ?? []).find(f => String(f.id) === String(item.form_type_id));
+                                    const unitPrice = ft
+                                        ? (item.printer_type === 'non_consumable' ? ft.price_non_consumable : ft.price_consumable)
+                                        : null;
+                                    return (
+                                        <div key={i} className="flex gap-2 items-center">
+                                            <Select
+                                                className="flex-1"
+                                                value={item.form_type_id}
+                                                onChange={e => updateItem(i, 'form_type_id', e.target.value)}
+                                                required
+                                            >
+                                                <option value="">Select form type…</option>
+                                                {(formTypes ?? []).map(ft => (
+                                                    <option key={ft.id} value={ft.id}>{ft.name}</option>
+                                                ))}
+                                            </Select>
+                                            <Select
+                                                className="w-44"
+                                                value={item.printer_type}
+                                                onChange={e => updateItem(i, 'printer_type', e.target.value)}
+                                                required
+                                            >
+                                                <option value="consumable">Consumable</option>
+                                                <option value="non_consumable">Non-Consumable</option>
+                                            </Select>
+                                            {unitPrice !== null && (
+                                                <span className="text-xs text-gray-500 whitespace-nowrap">₱{Number(unitPrice).toFixed(2)}/ea</span>
+                                            )}
+                                            <Input
+                                                type="number"
+                                                className="w-24"
+                                                placeholder="Qty"
+                                                value={item.quantity}
+                                                onChange={e => updateItem(i, 'quantity', e.target.value)}
+                                                required min={1}
+                                            />
+                                            {items.length > 1 && (
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(i)}>✕</Button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                                 {items.length < 10 && (
                                     <Button type="button" variant="outline" size="sm" onClick={addItem}>+ Add item</Button>
                                 )}

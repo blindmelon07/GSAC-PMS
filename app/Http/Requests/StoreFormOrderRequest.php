@@ -21,10 +21,11 @@ class StoreFormOrderRequest extends FormRequest
             'notes'                => ['nullable', 'string', 'max:1000'],
             'needed_by'            => ['nullable', 'date', 'after:today'],
             'items'                => ['required', 'array', 'min:1', 'max:10'],
-            'items.*.form_type_id' => [
+            'items.*.form_type_id'   => [
                 'required', 'integer',
                 Rule::exists('form_types', 'id')->where('is_active', true),
             ],
+            'items.*.printer_type' => ['required', Rule::in(['consumable', 'non_consumable'])],
             'items.*.quantity'     => ['required', 'integer', 'min:1', 'max:50000'],
             'items.*.notes'        => ['nullable', 'string', 'max:500'],
         ];

@@ -10,8 +10,11 @@ class FormOrderItem extends Model
 {
     use HasFactory;
 
+    const PRINTER_CONSUMABLE     = 'consumable';
+    const PRINTER_NON_CONSUMABLE = 'non_consumable';
+
     protected $fillable = [
-        'form_order_id', 'form_type_id',
+        'form_order_id', 'form_type_id', 'printer_type',
         'quantity', 'unit_price', 'line_total', 'notes',
     ];
 

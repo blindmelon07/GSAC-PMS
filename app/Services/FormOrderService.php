@@ -88,14 +88,17 @@ class FormOrderService
         $order->items()->delete();
 
         foreach ($items as $item) {
-            $formType = FormType::findOrFail($item['form_type_id']);
+            $formType    = FormType::findOrFail($item['form_type_id']);
+            $printerType = $item['printer_type'] ?? 'consumable';
+            $unitPrice   = $formType->priceFor($printerType);
 
             FormOrderItem::create([
                 'form_order_id' => $order->id,
                 'form_type_id'  => $formType->id,
+                'printer_type'  => $printerType,
                 'quantity'      => $item['quantity'],
-                'unit_price'    => $formType->unit_price,
-                'line_total'    => $formType->unit_price * $item['quantity'],
+                'unit_price'    => $unitPrice,
+                'line_total'    => $unitPrice * $item['quantity'],
                 'notes'         => $item['notes'] ?? null,
             ]);
         }
