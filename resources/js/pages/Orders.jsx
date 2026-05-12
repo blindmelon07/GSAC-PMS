@@ -22,7 +22,8 @@ export default function Orders({ orders, filters, isAdmin, formTypes, printerMai
     const [showForm, setShowForm] = useState(false);
 
     // New order form state
-    const [items, setItems]       = useState([{ form_type_id: '', printer_type: 'consumable', quantity: '' }]);
+    const defaultPrinter = !printerMaintenance.consumable ? 'consumable' : !printerMaintenance.non_consumable ? 'non_consumable' : '';
+    const [items, setItems] = useState([{ form_type_id: '', printer_type: defaultPrinter, quantity: '' }]);
     const [orderPriority, setOrderPriority] = useState('normal');
     const [notes, setNotes]       = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -31,7 +32,7 @@ export default function Orders({ orders, filters, isAdmin, formTypes, printerMai
         router.get('/orders', { search, status, priority, ...overrides }, { preserveState: true, replace: true });
     }
 
-    function addItem() { setItems([...items, { form_type_id: '', printer_type: 'consumable', quantity: '' }]); }
+    function addItem() { setItems([...items, { form_type_id: '', printer_type: defaultPrinter, quantity: '' }]); }
     function removeItem(i) { setItems(items.filter((_, idx) => idx !== i)); }
     function updateItem(i, key, val) {
         setItems(items.map((it, idx) => idx === i ? { ...it, [key]: val } : it));
@@ -81,7 +82,11 @@ export default function Orders({ orders, filters, isAdmin, formTypes, printerMai
                 </Select>
                 <div className="ml-auto">
                     {!isAdmin && (
-                        <Button onClick={() => setShowForm(!showForm)}>
+                        <Button
+                            onClick={() => setShowForm(!showForm)}
+                            disabled={printerMaintenance.consumable && printerMaintenance.non_consumable}
+                            title={printerMaintenance.consumable && printerMaintenance.non_consumable ? 'All printers are under maintenance' : undefined}
+                        >
                             <Plus size={14} /> New Order
                         </Button>
                     )}
@@ -90,13 +95,21 @@ export default function Orders({ orders, filters, isAdmin, formTypes, printerMai
 
             {/* Printer maintenance banner */}
             {!isAdmin && (printerMaintenance.consumable || printerMaintenance.non_consumable) && (
-                <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    <WrenchIcon size={16} className="mt-0.5 shrink-0 text-amber-600" />
+                <div className={`mb-4 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm ${
+                    printerMaintenance.consumable && printerMaintenance.non_consumable
+                        ? 'border-red-200 bg-red-50 text-red-800'
+                        : 'border-amber-200 bg-amber-50 text-amber-800'
+                }`}>
+                    <WrenchIcon size={16} className="mt-0.5 shrink-0" />
                     <div>
-                        <p className="font-semibold">Printer Maintenance Notice</p>
-                        <ul className="mt-0.5 list-disc list-inside text-xs text-amber-700 space-y-0.5">
-                            {printerMaintenance.consumable     && <li>Consumable printer is currently under maintenance — orders unavailable.</li>}
-                            {printerMaintenance.non_consumable && <li>Non-consumable printer is currently under maintenance — orders unavailable.</li>}
+                        <p className="font-semibold">
+                            {printerMaintenance.consumable && printerMaintenance.non_consumable
+                                ? 'All Printers Under Maintenance — Orders Unavailable'
+                                : 'Printer Maintenance Notice'}
+                        </p>
+                        <ul className="mt-0.5 list-disc list-inside text-xs space-y-0.5 opacity-80">
+                            {printerMaintenance.consumable     && <li>Consumable printer is under maintenance — hidden from order form.</li>}
+                            {printerMaintenance.non_consumable && <li>Non-consumable printer is under maintenance — hidden from order form.</li>}
                         </ul>
                     </div>
                 </div>
@@ -146,13 +159,14 @@ export default function Orders({ orders, filters, isAdmin, formTypes, printerMai
                                                 value={item.printer_type}
                                                 onChange={e => updateItem(i, 'printer_type', e.target.value)}
                                                 required
+                                                disabled={!defaultPrinter}
                                             >
-                                                <option value="consumable" disabled={printerMaintenance.consumable}>
-                                                    Consumable{printerMaintenance.consumable ? ' (Maintenance)' : ''}
-                                                </option>
-                                                <option value="non_consumable" disabled={printerMaintenance.non_consumable}>
-                                                    Non-Consumable{printerMaintenance.non_consumable ? ' (Maintenance)' : ''}
-                                                </option>
+                                                {!printerMaintenance.consumable && (
+                                                    <option value="consumable">Consumable</option>
+                                                )}
+                                                {!printerMaintenance.non_consumable && (
+                                                    <option value="non_consumable">Non-Consumable</option>
+                                                )}
                                             </Select>
                                             {unitPrice !== null && (
                                                 <span className="text-xs text-gray-500 whitespace-nowrap">₱{Number(unitPrice).toFixed(2)}/ea</span>
@@ -178,7 +192,7 @@ export default function Orders({ orders, filters, isAdmin, formTypes, printerMai
 
                             <div className="flex justify-end gap-2">
                                 <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-                                <Button type="submit" disabled={submitting}>
+                                <Button type="submit" disabled={submitting || !defaultPrinter}>
                                     {submitting ? 'Submitting…' : 'Submit Order'}
                                 </Button>
                             </div>
