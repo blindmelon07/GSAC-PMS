@@ -138,6 +138,35 @@
         <div class="s-label">Total Amount</div>
         <div class="s-value">₱{{ number_format($summary['total_amount'], 2) }}</div>
       </div>
+    @elseif($type === 'audit-logs')
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:0 16px 0 0;border-right:1px solid #e5e7eb;">
+            <div class="s-label">Total Movements</div>
+            <div class="s-value">{{ $summary['total'] }}</div>
+          </td>
+          <td style="padding:0 16px;border-right:1px solid #e5e7eb;">
+            <div class="s-label">Restocks</div>
+            <div class="s-value" style="color:#166534">{{ $summary['restocks'] }}</div>
+          </td>
+          <td style="padding:0 16px;border-right:1px solid #e5e7eb;">
+            <div class="s-label">Adjustments</div>
+            <div class="s-value" style="color:#1d4ed8">{{ $summary['adjustments'] }}</div>
+          </td>
+          <td style="padding:0 16px;border-right:1px solid #e5e7eb;">
+            <div class="s-label">Fulfillments</div>
+            <div class="s-value" style="color:#7c3aed">{{ $summary['fulfillments'] }}</div>
+          </td>
+          <td style="padding:0 16px;border-right:1px solid #e5e7eb;">
+            <div class="s-label">Units Restocked</div>
+            <div class="s-value" style="color:#166534">+{{ number_format($summary['total_restocked']) }}</div>
+          </td>
+          <td style="padding:0 0 0 16px;">
+            <div class="s-label">Units Fulfilled</div>
+            <div class="s-value" style="color:#dc2626">−{{ number_format($summary['total_fulfilled']) }}</div>
+          </td>
+        </tr>
+      </table>
     @endif
   </div>
 </div>
@@ -242,6 +271,44 @@
       </tr>
       @empty
       <tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px">No data found.</td></tr>
+      @endforelse
+    </tbody>
+  </table>
+
+  @elseif($type === 'audit-logs')
+  <table class="data" style="font-size:8px;">
+    <thead><tr>
+      <th style="width:12%">Date &amp; Time</th>
+      <th style="width:18%">Product</th>
+      <th style="width:10%">Type</th>
+      <th class="tr" style="width:8%">Change</th>
+      <th class="tr" style="width:7%">Before</th>
+      <th class="tr" style="width:7%">After</th>
+      <th style="width:14%">Reference</th>
+      <th style="width:16%">Notes</th>
+      <th style="width:8%">By</th>
+    </tr></thead>
+    <tbody>
+      @php $typeLabels = ['restock' => 'Restock', 'adjustment' => 'Adjust', 'order_fulfillment' => 'Fulfil']; @endphp
+      @forelse($data as $i => $r)
+      <tr class="{{ $i % 2 === 1 ? 'even' : '' }}">
+        <td class="mono" style="font-size:7.5px;">{{ $r['date'] }}</td>
+        <td>
+          <strong>{{ $r['product'] ?? '—' }}</strong>
+          <span class="mono" style="color:#888;font-size:7px;"> {{ $r['product_code'] }}</span>
+        </td>
+        <td><span class="badge">{{ $typeLabels[$r['type']] ?? $r['type'] }}</span></td>
+        <td class="tr" style="font-weight:bold;color:{{ $r['quantity_change'] >= 0 ? '#166534' : '#dc2626' }};">
+          {{ $r['quantity_change'] >= 0 ? '+' : '' }}{{ $r['quantity_change'] }}
+        </td>
+        <td class="tr">{{ $r['quantity_before'] }}</td>
+        <td class="tr"><strong>{{ $r['quantity_after'] }}</strong></td>
+        <td class="mono" style="font-size:7.5px;">{{ $r['reference'] ?? '—' }}</td>
+        <td style="font-size:7.5px;">{{ Str::limit($r['notes'] ?? '—', 40) }}</td>
+        <td style="font-size:7.5px;">{{ $r['performed_by'] ?? '—' }}</td>
+      </tr>
+      @empty
+      <tr><td colspan="9" style="text-align:center;color:#aaa;padding:20px">No audit log entries for this period.</td></tr>
       @endforelse
     </tbody>
   </table>

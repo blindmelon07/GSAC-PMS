@@ -7,9 +7,12 @@ use App\Models\ProductOrder;
 use App\Models\ProductOrderItem;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use App\Services\InventoryService;
 
 class ProductOrderService
 {
+    public function __construct(private readonly InventoryService $inventory) {}
+
     public function create(array $data, User $requestedBy): ProductOrder
     {
         return DB::transaction(function () use ($data, $requestedBy) {
@@ -61,11 +64,15 @@ class ProductOrderService
     {
         abort_if(! $order->canBeDelivered(), 422, 'This order cannot be marked delivered in its current state.');
 
+        $order->load('items');
+
         $order->update([
             'status'       => ProductOrder::STATUS_DELIVERED,
             'delivered_by' => $deliveredBy->id,
             'delivered_at' => now(),
         ]);
+
+        $this->inventory->deductForOrder($order, $deliveredBy);
 
         return $order->fresh();
     }

@@ -7,14 +7,21 @@ import { Button } from '../components/ui/button';
 import { Input, Select } from '../components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { formatPeso, statusColor } from '../lib/utils';
-import { BarChart3, FileText, Building2, Tag, Search, Download } from 'lucide-react';
+import { BarChart3, FileText, Building2, Tag, Search, Download, ClipboardList, TrendingUp, TrendingDown } from 'lucide-react';
 
 const REPORT_TYPES = [
-    { key: 'orders',     label: 'Orders',           icon: BarChart3  },
-    { key: 'invoices',   label: 'Invoices',          icon: FileText   },
-    { key: 'branches',   label: 'Branch Summary',    icon: Building2  },
-    { key: 'form-types', label: 'Form Types Usage',  icon: Tag        },
+    { key: 'orders',      label: 'Orders',             icon: BarChart3     },
+    { key: 'invoices',    label: 'Invoices',            icon: FileText      },
+    { key: 'branches',    label: 'Branch Summary',      icon: Building2     },
+    { key: 'form-types',  label: 'Form Types Usage',    icon: Tag           },
+    { key: 'audit-logs',  label: 'Inventory Audit Log', icon: ClipboardList },
 ];
+
+const MOVEMENT_TYPE_META = {
+    restock:           { label: 'Restock',     color: 'bg-green-100 text-green-700' },
+    adjustment:        { label: 'Adjustment',  color: 'bg-blue-100 text-blue-700'   },
+    order_fulfillment: { label: 'Fulfillment', color: 'bg-purple-100 text-purple-700' },
+};
 
 function SummaryCard({ label, value, sub, color = 'text-[#185FA5]' }) {
     return (
@@ -174,6 +181,55 @@ function FormTypesTable({ data }) {
     );
 }
 
+/* ── Audit logs table ── */
+function AuditLogsTable({ data }) {
+    return (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Date &amp; Time</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-center">Change</TableHead>
+                    <TableHead className="text-center">Before</TableHead>
+                    <TableHead className="text-center">After</TableHead>
+                    <TableHead>Reference</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead>Performed By</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {data.length === 0 && <EmptyRow cols={9} />}
+                {data.map((r, i) => {
+                    const meta = MOVEMENT_TYPE_META[r.type] ?? { label: r.type, color: 'bg-gray-100 text-gray-600' };
+                    const positive = r.quantity_change >= 0;
+                    return (
+                        <TableRow key={i}>
+                            <TableCell className="font-mono text-xs text-gray-500 whitespace-nowrap">{r.date}</TableCell>
+                            <TableCell>
+                                <div className="font-medium text-sm">{r.product ?? '—'}</div>
+                                <div className="font-mono text-[10px] text-gray-400">{r.product_code}</div>
+                            </TableCell>
+                            <TableCell><Badge className={meta.color}>{meta.label}</Badge></TableCell>
+                            <TableCell className="text-center">
+                                <span className={`flex items-center justify-center gap-1 font-bold text-sm ${positive ? 'text-green-600' : 'text-red-600'}`}>
+                                    {positive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                                    {positive ? '+' : ''}{r.quantity_change}
+                                </span>
+                            </TableCell>
+                            <TableCell className="text-center text-xs text-gray-500">{r.quantity_before}</TableCell>
+                            <TableCell className="text-center text-sm font-semibold">{r.quantity_after}</TableCell>
+                            <TableCell className="font-mono text-xs text-gray-500">{r.reference ?? '—'}</TableCell>
+                            <TableCell className="text-xs text-gray-500 max-w-40 truncate">{r.notes ?? '—'}</TableCell>
+                            <TableCell className="text-xs text-gray-600">{r.performed_by ?? '—'}</TableCell>
+                        </TableRow>
+                    );
+                })}
+            </TableBody>
+        </Table>
+    );
+}
+
 function EmptyRow({ cols }) {
     return (
         <TableRow>
@@ -220,6 +276,28 @@ function SummaryCards({ type, summary }) {
         </div>
     );
 
+    if (type === 'audit-logs') return (
+        <Card>
+            <CardContent className="p-3">
+                <div className="flex flex-wrap items-center divide-x divide-gray-100">
+                    {[
+                        { label: 'Total',        value: summary.total,           color: 'text-[#185FA5]' },
+                        { label: 'Restocks',     value: summary.restocks,        color: 'text-green-600' },
+                        { label: 'Adjustments',  value: summary.adjustments,     color: 'text-blue-600'  },
+                        { label: 'Fulfillments', value: summary.fulfillments,    color: 'text-purple-600'},
+                        { label: 'Units In',     value: `+${(summary.total_restocked ?? 0).toLocaleString()}`,  color: 'text-green-600' },
+                        { label: 'Units Out',    value: `−${(summary.total_fulfilled  ?? 0).toLocaleString()}`, color: 'text-red-500'   },
+                    ].map(({ label, value, color }) => (
+                        <div key={label} className="flex flex-col items-center px-5 py-1 first:pl-0 last:pr-0">
+                            <span className={`text-lg font-bold ${color}`}>{value}</span>
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400">{label}</span>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+    );
+
     return null;
 }
 
@@ -244,7 +322,7 @@ export default function Reports({ type, from, to, branchId, results, summary, br
         return `/reports/export?${params.toString()}`;
     }
 
-    const showBranchFilter = type !== 'branches';
+    const showBranchFilter = type !== 'branches' && type !== 'audit-logs';
 
     return (
         <AppLayout title="Reports">
@@ -325,10 +403,11 @@ export default function Reports({ type, from, to, branchId, results, summary, br
             {/* Results table */}
             <Card>
                 <CardContent className="p-0">
-                    {type === 'orders'     && <OrdersTable    data={results ?? []} />}
+                    {type === 'orders'      && <OrdersTable    data={results ?? []} />}
                     {type === 'invoices'   && <InvoicesTable  data={results ?? []} />}
                     {type === 'branches'   && <BranchTable    data={results ?? []} />}
                     {type === 'form-types' && <FormTypesTable data={results ?? []} />}
+                    {type === 'audit-logs' && <AuditLogsTable data={results ?? []} />}
                 </CardContent>
             </Card>
         </AppLayout>

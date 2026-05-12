@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\FormOrder;
 use App\Models\FormOrderItem;
 use App\Models\Invoice;
+use App\Models\InventoryMovement;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,10 +25,11 @@ class ReportWebController extends Controller
         $branchId = $request->filled('branch_id') ? $request->input('branch_id') : null;
 
         $results = match ($type) {
-            'invoices'   => $this->invoiceReport($from, $to, $branchId),
-            'branches'   => $this->branchReport($from, $to),
-            'form-types' => $this->formTypeReport($from, $to, $branchId),
-            default      => $this->ordersReport($from, $to, $branchId),
+            'invoices'    => $this->invoiceReport($from, $to, $branchId),
+            'branches'    => $this->branchReport($from, $to),
+            'form-types'  => $this->formTypeReport($from, $to, $branchId),
+            'audit-logs'  => $this->auditLogReport($from, $to),
+            default       => $this->ordersReport($from, $to, $branchId),
         };
 
         return Inertia::render('Reports', [
@@ -52,18 +54,20 @@ class ReportWebController extends Controller
         $branchId = $request->filled('branch_id') ? $request->input('branch_id') : null;
 
         $results = match ($type) {
-            'invoices'   => $this->invoiceReport($from, $to, $branchId),
-            'branches'   => $this->branchReport($from, $to),
-            'form-types' => $this->formTypeReport($from, $to, $branchId),
-            default      => $this->ordersReport($from, $to, $branchId),
+            'invoices'    => $this->invoiceReport($from, $to, $branchId),
+            'branches'    => $this->branchReport($from, $to),
+            'form-types'  => $this->formTypeReport($from, $to, $branchId),
+            'audit-logs'  => $this->auditLogReport($from, $to),
+            default       => $this->ordersReport($from, $to, $branchId),
         };
 
         $branch   = $branchId ? Branch::query()->where('id', $branchId)->first() : null;
         $typeLabel = match ($type) {
-            'invoices'   => 'Invoices',
-            'branches'   => 'Branch Summary',
-            'form-types' => 'Form Types Usage',
-            default      => 'Orders',
+            'invoices'    => 'Invoices',
+            'branches'    => 'Branch Summary',
+            'form-types'  => 'Form Types Usage',
+            'audit-logs'  => 'Inventory Audit Log',
+            default       => 'Orders',
         };
 
         $filename = "report-{$type}-{$from}-to-{$to}.pdf";
@@ -82,7 +86,7 @@ class ReportWebController extends Controller
             'generatedAt' => now()->format('d M Y H:i'),
             'logoSrc'     => $logoSrc,
         ])
-        ->setPaper('a4', 'landscape')
+        ->setPaper('a4', 'portrait')
         ->setOptions([
             'defaultFont'             => 'DejaVu Sans',
             'isRemoteEnabled'         => false,
@@ -231,6 +235,37 @@ class ReportWebController extends Controller
                 'count'        => $branches->count(),
                 'total_orders' => (int) $branches->sum('total_orders'),
                 'total_amount' => (float) $branches->sum('total_amount'),
+            ],
+        ];
+    }
+
+    private function auditLogReport(string $from, string $to): array
+    {
+        $movements = InventoryMovement::with(['inventory.product', 'performer'])
+            ->whereBetween('created_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return [
+            'data'    => $movements->map(fn ($m) => [
+                'date'            => $m->created_at->format('Y-m-d H:i'),
+                'product'         => $m->inventory?->product?->name,
+                'product_code'    => $m->inventory?->product?->code,
+                'type'            => $m->type,
+                'quantity_change' => $m->quantity_change,
+                'quantity_before' => $m->quantity_before,
+                'quantity_after'  => $m->quantity_after,
+                'reference'       => $m->reference,
+                'notes'           => $m->notes,
+                'performed_by'    => $m->performer?->name,
+            ]),
+            'summary' => [
+                'total'            => $movements->count(),
+                'restocks'         => $movements->where('type', 'restock')->count(),
+                'adjustments'      => $movements->where('type', 'adjustment')->count(),
+                'fulfillments'     => $movements->where('type', 'order_fulfillment')->count(),
+                'total_restocked'  => (int) $movements->where('type', 'restock')->sum('quantity_change'),
+                'total_fulfilled'  => (int) abs($movements->where('type', 'order_fulfillment')->sum('quantity_change')),
             ],
         ];
     }

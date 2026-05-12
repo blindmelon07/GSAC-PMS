@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
-    LayoutDashboard, ClipboardList, FileText, Building2, LogOut, ChevronRight, Tag, Users, Settings, KeyRound, X, BarChart3, ShoppingCart, Package,
+    LayoutDashboard, ClipboardList, FileText, Building2, LogOut, ChevronRight, Tag, Users, Settings, KeyRound, X, BarChart3, ShoppingCart, Package, Warehouse,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/button';
@@ -19,6 +19,7 @@ const adminNav = [
     { label: 'Branches',   href: '/branches',   icon: Building2 },
     { label: 'Form Types', href: '/form-types', icon: Tag },
     { label: 'Products',   href: '/products',   icon: Package },
+    { label: 'Inventory',  href: '/inventory',  icon: Warehouse },
     { label: 'Users',      href: '/users',      icon: Users },
     { label: 'Settings',   href: '/settings',   icon: Settings },
 ];

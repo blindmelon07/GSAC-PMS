@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\DashboardWebController;
 use App\Http\Controllers\Web\FormTypeWebController;
 use App\Http\Controllers\Web\InvoiceWebController;
 use App\Http\Controllers\Web\OrderWebController;
+use App\Http\Controllers\Web\InventoryWebController;
 use App\Http\Controllers\Web\ProductWebController;
 use App\Http\Controllers\Web\ProductOrderWebController;
 use App\Http\Controllers\Web\ProfileWebController;
@@ -49,6 +50,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/form-types',              [FormTypeWebController::class, 'index']);
     Route::post('/form-types',             [FormTypeWebController::class, 'store']);
     Route::patch('/form-types/{formType}', [FormTypeWebController::class, 'update']);
+
+    Route::get('/inventory',                              [InventoryWebController::class, 'index']);
+    Route::post('/inventory/{inventory}/restock',         [InventoryWebController::class, 'restock']);
+    Route::patch('/inventory/{inventory}/adjust',         [InventoryWebController::class, 'adjust']);
+    Route::get('/inventory/{inventory}/movements',        [InventoryWebController::class, 'movements']);
 
     Route::get('/products',             [ProductWebController::class, 'index']);
     Route::post('/products',            [ProductWebController::class, 'store']);

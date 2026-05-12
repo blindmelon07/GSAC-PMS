@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
@@ -37,6 +38,18 @@ class Product extends Model
         'customizations' => 'array',
         'is_active'      => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (Product $product) {
+            Inventory::firstOrCreate(['product_id' => $product->id]);
+        });
+    }
+
+    public function inventory(): HasOne
+    {
+        return $this->hasOne(Inventory::class);
+    }
 
     public function orderItems(): HasMany
     {
