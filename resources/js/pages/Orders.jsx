@@ -7,12 +7,12 @@ import { Button } from '../components/ui/button';
 import { Input, Select } from '../components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { formatPeso, statusColor, priorityColor } from '../lib/utils';
-import { CheckCircle, XCircle, Truck, Plus, Search } from 'lucide-react';
+import { CheckCircle, XCircle, Truck, Plus, Search, WrenchIcon } from 'lucide-react';
 
 const STATUS_OPTS = ['', 'pending', 'approved', 'rejected', 'in_transit', 'delivered', 'billed'];
 const PRIORITY_OPTS = ['', 'low', 'normal', 'urgent'];
 
-export default function Orders({ orders, filters, isAdmin, formTypes }) {
+export default function Orders({ orders, filters, isAdmin, formTypes, printerMaintenance = {} }) {
     const { props } = usePage();
     const user = props.auth?.user;
 
@@ -88,6 +88,20 @@ export default function Orders({ orders, filters, isAdmin, formTypes }) {
                 </div>
             </div>
 
+            {/* Printer maintenance banner */}
+            {!isAdmin && (printerMaintenance.consumable || printerMaintenance.non_consumable) && (
+                <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    <WrenchIcon size={16} className="mt-0.5 shrink-0 text-amber-600" />
+                    <div>
+                        <p className="font-semibold">Printer Maintenance Notice</p>
+                        <ul className="mt-0.5 list-disc list-inside text-xs text-amber-700 space-y-0.5">
+                            {printerMaintenance.consumable     && <li>Consumable printer is currently under maintenance — orders unavailable.</li>}
+                            {printerMaintenance.non_consumable && <li>Non-consumable printer is currently under maintenance — orders unavailable.</li>}
+                        </ul>
+                    </div>
+                </div>
+            )}
+
             {/* New order form */}
             {showForm && !isAdmin && (
                 <Card className="mb-4 border-[#185FA5]/30">
@@ -133,8 +147,12 @@ export default function Orders({ orders, filters, isAdmin, formTypes }) {
                                                 onChange={e => updateItem(i, 'printer_type', e.target.value)}
                                                 required
                                             >
-                                                <option value="consumable">Consumable</option>
-                                                <option value="non_consumable">Non-Consumable</option>
+                                                <option value="consumable" disabled={printerMaintenance.consumable}>
+                                                    Consumable{printerMaintenance.consumable ? ' (Maintenance)' : ''}
+                                                </option>
+                                                <option value="non_consumable" disabled={printerMaintenance.non_consumable}>
+                                                    Non-Consumable{printerMaintenance.non_consumable ? ' (Maintenance)' : ''}
+                                                </option>
                                             </Select>
                                             {unitPrice !== null && (
                                                 <span className="text-xs text-gray-500 whitespace-nowrap">₱{Number(unitPrice).toFixed(2)}/ea</span>

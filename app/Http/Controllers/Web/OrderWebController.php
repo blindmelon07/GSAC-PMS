@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Web\SettingWebController;
 use App\Http\Requests\StoreFormOrderRequest;
 use App\Models\FormOrder;
 use App\Models\FormType;
@@ -29,10 +30,11 @@ class OrderWebController extends Controller
         if ($request->filled('search'))   $query->where('reference_number', 'like', "%{$request->search}%");
 
         return Inertia::render('Orders', [
-            'orders'    => $query->paginate(20)->withQueryString(),
-            'filters'   => $request->only('status', 'priority', 'search'),
-            'isAdmin'   => $user->isAdmin(),
-            'formTypes' => FormType::active()->orderBy('name')->get(),
+            'orders'             => $query->paginate(20)->withQueryString(),
+            'filters'            => $request->only('status', 'priority', 'search'),
+            'isAdmin'            => $user->isAdmin(),
+            'formTypes'          => FormType::active()->orderBy('name')->get(),
+            'printerMaintenance' => SettingWebController::printerMaintenanceStatus(),
         ]);
     }
 

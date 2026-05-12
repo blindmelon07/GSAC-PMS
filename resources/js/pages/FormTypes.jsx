@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { formatPeso } from '../lib/utils';
-import { Pencil, Plus, X, Check } from 'lucide-react';
+import { Pencil, Plus, X, Check, WrenchIcon } from 'lucide-react';
 
 const EMPTY_FORM = {
     code: '', name: '', description: '',
@@ -32,7 +32,15 @@ function PriceInput({ value, onChange, className = 'h-7 w-24 text-xs' }) {
     );
 }
 
-export default function FormTypes({ formTypes }) {
+function MaintenanceBadge() {
+    return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+            <WrenchIcon size={9} /> Maintenance
+        </span>
+    );
+}
+
+export default function FormTypes({ formTypes, printerMaintenance = {} }) {
     const { props } = usePage();
     const flash = props.flash ?? {};
 
@@ -172,8 +180,18 @@ export default function FormTypes({ formTypes }) {
                             <TableRow>
                                 <TableHead>Code</TableHead>
                                 <TableHead>Name</TableHead>
-                                <TableHead className="text-center">Consumable Price</TableHead>
-                                <TableHead className="text-center">Non-Consumable Price</TableHead>
+                                <TableHead className="text-center">
+                                    <span className="flex items-center justify-center gap-1.5">
+                                        Consumable Price
+                                        {printerMaintenance.consumable && <MaintenanceBadge />}
+                                    </span>
+                                </TableHead>
+                                <TableHead className="text-center">
+                                    <span className="flex items-center justify-center gap-1.5">
+                                        Non-Consumable Price
+                                        {printerMaintenance.non_consumable && <MaintenanceBadge />}
+                                    </span>
+                                </TableHead>
                                 <TableHead>Label</TableHead>
                                 <TableHead>Min</TableHead>
                                 <TableHead>Max</TableHead>
@@ -198,12 +216,28 @@ export default function FormTypes({ formTypes }) {
                                                 className="h-7 text-xs" required />
                                         </TableCell>
                                         <TableCell>
-                                            <PriceInput value={editData.price_consumable}
-                                                onChange={v => setEdit('price_consumable', v)} />
+                                            <div className="flex flex-col gap-0.5">
+                                                <PriceInput value={editData.price_consumable}
+                                                    onChange={v => setEdit('price_consumable', v)}
+                                                    className={`h-7 w-24 text-xs ${printerMaintenance.consumable ? 'opacity-50 cursor-not-allowed' : ''}`} />
+                                                {printerMaintenance.consumable && (
+                                                    <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
+                                                        <WrenchIcon size={9} /> Maintenance
+                                                    </span>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
-                                            <PriceInput value={editData.price_non_consumable}
-                                                onChange={v => setEdit('price_non_consumable', v)} />
+                                            <div className="flex flex-col gap-0.5">
+                                                <PriceInput value={editData.price_non_consumable}
+                                                    onChange={v => setEdit('price_non_consumable', v)}
+                                                    className={`h-7 w-24 text-xs ${printerMaintenance.non_consumable ? 'opacity-50 cursor-not-allowed' : ''}`} />
+                                                {printerMaintenance.non_consumable && (
+                                                    <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
+                                                        <WrenchIcon size={9} /> Maintenance
+                                                    </span>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
                                             <Input value={editData.unit_label} onChange={e => setEdit('unit_label', e.target.value)}
@@ -243,12 +277,30 @@ export default function FormTypes({ formTypes }) {
                                         <TableCell className="font-mono text-xs">{ft.code}</TableCell>
                                         <TableCell className="font-medium">{ft.name}</TableCell>
                                         <TableCell className="text-center">
-                                            <div className="text-xs text-gray-400 mb-0.5">Consumable</div>
-                                            <div className="font-semibold text-green-700">{formatPeso(ft.price_consumable)}</div>
+                                            {printerMaintenance.consumable ? (
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="text-xs text-gray-300 line-through">{formatPeso(ft.price_consumable)}</div>
+                                                    <MaintenanceBadge />
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="text-xs text-gray-400 mb-0.5">Consumable</div>
+                                                    <div className="font-semibold text-green-700">{formatPeso(ft.price_consumable)}</div>
+                                                </>
+                                            )}
                                         </TableCell>
                                         <TableCell className="text-center">
-                                            <div className="text-xs text-gray-400 mb-0.5">Non-Consumable</div>
-                                            <div className="font-semibold text-blue-700">{formatPeso(ft.price_non_consumable)}</div>
+                                            {printerMaintenance.non_consumable ? (
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="text-xs text-gray-300 line-through">{formatPeso(ft.price_non_consumable)}</div>
+                                                    <MaintenanceBadge />
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="text-xs text-gray-400 mb-0.5">Non-Consumable</div>
+                                                    <div className="font-semibold text-blue-700">{formatPeso(ft.price_non_consumable)}</div>
+                                                </>
+                                            )}
                                         </TableCell>
                                         <TableCell className="text-xs text-gray-500">{ft.unit_label}</TableCell>
                                         <TableCell className="text-xs">{ft.minimum_order}</TableCell>

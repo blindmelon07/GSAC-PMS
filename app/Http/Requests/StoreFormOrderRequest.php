@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\FormOrder;
 use App\Models\FormType;
+use App\Models\Setting;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -34,8 +35,27 @@ class StoreFormOrderRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($v) {
+            $consumableMaintenance    = Setting::getValue('printer_consumable_maintenance',     '0') === '1';
+            $nonConsumableMaintenance = Setting::getValue('printer_non_consumable_maintenance', '0') === '1';
+
             foreach ($this->items ?? [] as $index => $item) {
                 if (empty($item['form_type_id']) || empty($item['quantity'])) continue;
+
+                $printerType = $item['printer_type'] ?? 'consumable';
+
+                if ($printerType === 'consumable' && $consumableMaintenance) {
+                    $v->errors()->add(
+                        "items.{$index}.printer_type",
+                        'The consumable printer is currently under maintenance. Please select a different printer type.'
+                    );
+                }
+
+                if ($printerType === 'non_consumable' && $nonConsumableMaintenance) {
+                    $v->errors()->add(
+                        "items.{$index}.printer_type",
+                        'The non-consumable printer is currently under maintenance. Please select a different printer type.'
+                    );
+                }
 
                 $formType = FormType::find($item['form_type_id']);
 

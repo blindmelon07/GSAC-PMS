@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Web\SettingWebController;
 use App\Models\FormType;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,7 +15,8 @@ class FormTypeWebController extends Controller
         abort_unless($request->user()->isAdmin(), 403);
 
         return Inertia::render('FormTypes', [
-            'formTypes' => FormType::withTrashed()->orderBy('name')->get(),
+            'formTypes'          => FormType::withTrashed()->orderBy('name')->get(),
+            'printerMaintenance' => SettingWebController::printerMaintenanceStatus(),
         ]);
     }
 

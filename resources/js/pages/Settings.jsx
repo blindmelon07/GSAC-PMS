@@ -4,6 +4,7 @@ import AppLayout from '../layouts/AppLayout';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { WrenchIcon, PrinterIcon } from 'lucide-react';
 
 function SettingRow({ label, description, value, onChange, suffix = '%', min = 0, max = 100, step = '0.01' }) {
     return (
@@ -17,9 +18,7 @@ function SettingRow({ label, description, value, onChange, suffix = '%', min = 0
                     type="number"
                     value={value}
                     onChange={e => onChange(e.target.value)}
-                    min={min}
-                    max={max}
-                    step={step}
+                    min={min} max={max} step={step}
                     className="text-right"
                 />
                 <span className="text-sm font-medium text-gray-500 w-4">{suffix}</span>
@@ -28,34 +27,76 @@ function SettingRow({ label, description, value, onChange, suffix = '%', min = 0
     );
 }
 
-export default function Settings({ settings }) {
+function MaintenanceToggle({ label, description, checked, onChange }) {
+    const id = label.replace(/\s+/g, '-').toLowerCase();
+    return (
+        <div className="flex items-start justify-between gap-8 py-5 border-b border-gray-100 last:border-0">
+            <div className="flex-1">
+                <div className="flex items-center gap-2">
+                    <PrinterIcon size={14} className="text-gray-400" />
+                    <p className="text-sm font-semibold text-gray-800">{label}</p>
+                    {checked && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                            <WrenchIcon size={9} /> Under Maintenance
+                        </span>
+                    )}
+                </div>
+                {description && <p className="mt-0.5 text-xs text-gray-400">{description}</p>}
+            </div>
+            <label htmlFor={id} className="relative inline-flex cursor-pointer items-center shrink-0">
+                <input
+                    type="checkbox"
+                    id={id}
+                    checked={checked}
+                    onChange={e => onChange(e.target.checked)}
+                    className="sr-only peer"
+                />
+                <div className={[
+                    'h-6 w-11 rounded-full transition-colors',
+                    checked ? 'bg-amber-500' : 'bg-gray-200',
+                ].join(' ')}>
+                    <div className={[
+                        'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+                        checked ? 'translate-x-5' : 'translate-x-0',
+                    ].join(' ')} />
+                </div>
+            </label>
+        </div>
+    );
+}
+
+export default function Settings({ settings, printerMaintenance }) {
     const { props } = usePage();
     const flash = props.flash ?? {};
 
     const byKey = Object.fromEntries((settings ?? []).map(s => [s.key, s.value]));
 
-    const [vatRate,      setVatRate]      = useState(byKey.vat_rate      ?? '12.00');
-    const [discountRate, setDiscountRate] = useState(byKey.discount_rate ?? '0.00');
-    const [submitting,   setSubmitting]   = useState(false);
+    const [vatRate,           setVatRate]           = useState(byKey.vat_rate      ?? '12.00');
+    const [discountRate,      setDiscountRate]       = useState(byKey.discount_rate ?? '0.00');
+    const [consumableMaint,   setConsumableMaint]   = useState(printerMaintenance?.consumable     ?? false);
+    const [nonConsumableMaint, setNonConsumableMaint] = useState(printerMaintenance?.non_consumable ?? false);
+    const [submitting, setSubmitting] = useState(false);
 
     function handleSubmit(e) {
         e.preventDefault();
         setSubmitting(true);
         router.post('/settings', {
-            vat_rate:      vatRate,
-            discount_rate: discountRate,
+            vat_rate:                           vatRate,
+            discount_rate:                      discountRate,
+            printer_consumable_maintenance:     consumableMaint,
+            printer_non_consumable_maintenance: nonConsumableMaint,
         }, {
             onFinish: () => setSubmitting(false),
         });
     }
 
-    const exampleSubtotal  = 1000;
-    const discount         = parseFloat(discountRate) || 0;
-    const vat              = parseFloat(vatRate) || 0;
-    const discountAmt      = exampleSubtotal * (discount / 100);
-    const taxableAmt       = exampleSubtotal - discountAmt;
-    const taxAmt           = taxableAmt * (vat / 100);
-    const total            = taxableAmt + taxAmt;
+    const exampleSubtotal = 1000;
+    const discount        = parseFloat(discountRate) || 0;
+    const vat             = parseFloat(vatRate) || 0;
+    const discountAmt     = exampleSubtotal * (discount / 100);
+    const taxableAmt      = exampleSubtotal - discountAmt;
+    const taxAmt          = taxableAmt * (vat / 100);
+    const total           = taxableAmt + taxAmt;
 
     return (
         <AppLayout title="Settings">
@@ -65,17 +106,16 @@ export default function Settings({ settings }) {
                 </div>
             )}
 
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* Settings form */}
-                <div className="lg:col-span-2">
-                    <Card>
-                        <CardContent className="p-6">
-                            <h2 className="mb-1 text-sm font-semibold text-gray-800">Tax & Discount</h2>
-                            <p className="mb-5 text-xs text-gray-400">
-                                These rates apply to all new orders and generated invoices.
-                                Existing records are not affected.
-                            </p>
-                            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid gap-6 lg:grid-cols-3">
+                    {/* Tax & Discount */}
+                    <div className="lg:col-span-2">
+                        <Card>
+                            <CardContent className="p-6">
+                                <h2 className="mb-1 text-sm font-semibold text-gray-800">Tax & Discount</h2>
+                                <p className="mb-5 text-xs text-gray-400">
+                                    These rates apply to all new orders and generated invoices. Existing records are not affected.
+                                </p>
                                 <SettingRow
                                     label="VAT Rate"
                                     description="Value-added tax applied to order subtotals and invoices."
@@ -88,51 +128,70 @@ export default function Settings({ settings }) {
                                     value={discountRate}
                                     onChange={setDiscountRate}
                                 />
-                                <div className="mt-5 flex justify-end">
-                                    <Button type="submit" disabled={submitting}>
-                                        {submitting ? 'Saving…' : 'Save Settings'}
-                                    </Button>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Live preview */}
+                    <div>
+                        <Card className="border-[#185FA5]/20 bg-blue-50/40">
+                            <CardContent className="p-5">
+                                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                    Preview (₱{exampleSubtotal.toLocaleString()} subtotal)
+                                </h3>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between text-gray-600">
+                                        <span>Subtotal</span><span>₱{exampleSubtotal.toFixed(2)}</span>
+                                    </div>
+                                    {discountAmt > 0 && (
+                                        <div className="flex justify-between text-red-600">
+                                            <span>Discount ({discount}%)</span>
+                                            <span>− ₱{discountAmt.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between text-gray-600">
+                                        <span>After Discount</span><span>₱{taxableAmt.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-gray-600">
+                                        <span>VAT ({vat}%)</span><span>+ ₱{taxAmt.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between border-t border-[#185FA5]/20 pt-2 font-semibold text-gray-900">
+                                        <span>Total</span><span>₱{total.toFixed(2)}</span>
+                                    </div>
                                 </div>
-                            </form>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
 
-                {/* Live preview */}
-                <div>
-                    <Card className="border-[#185FA5]/20 bg-blue-50/40">
-                        <CardContent className="p-5">
-                            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                Preview (₱{exampleSubtotal.toLocaleString()} subtotal)
-                            </h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between text-gray-600">
-                                    <span>Subtotal</span>
-                                    <span>₱{exampleSubtotal.toFixed(2)}</span>
-                                </div>
-                                {discountAmt > 0 && (
-                                    <div className="flex justify-between text-red-600">
-                                        <span>Discount ({discount}%)</span>
-                                        <span>− ₱{discountAmt.toFixed(2)}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between text-gray-600">
-                                    <span>After Discount</span>
-                                    <span>₱{taxableAmt.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-gray-600">
-                                    <span>VAT ({vat}%)</span>
-                                    <span>+ ₱{taxAmt.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between border-t border-[#185FA5]/20 pt-2 font-semibold text-gray-900">
-                                    <span>Total</span>
-                                    <span>₱{total.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* Printer Maintenance */}
+                <Card>
+                    <CardContent className="p-6">
+                        <h2 className="mb-1 text-sm font-semibold text-gray-800">Printer Maintenance</h2>
+                        <p className="mb-5 text-xs text-gray-400">
+                            When a printer is under maintenance, its orders are blocked and prices are shown as unavailable.
+                        </p>
+                        <MaintenanceToggle
+                            label="Consumable Printer"
+                            description="Toggle on to put the consumable printer under maintenance."
+                            checked={consumableMaint}
+                            onChange={setConsumableMaint}
+                        />
+                        <MaintenanceToggle
+                            label="Non-Consumable Printer"
+                            description="Toggle on to put the non-consumable printer under maintenance."
+                            checked={nonConsumableMaint}
+                            onChange={setNonConsumableMaint}
+                        />
+                    </CardContent>
+                </Card>
+
+                <div className="flex justify-end">
+                    <Button type="submit" disabled={submitting}>
+                        {submitting ? 'Saving…' : 'Save Settings'}
+                    </Button>
                 </div>
-            </div>
+            </form>
         </AppLayout>
     );
 }
